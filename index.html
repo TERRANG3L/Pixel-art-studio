@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Pixel Art Studio Pro++ - Crea arte pixel profesional directamente en tu navegador con herramientas avanzadas.">
+    <title>Pixel Art Studio Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Overlay para diálogo de confirmación -->
+    <div class="dialog-overlay" id="dialogOverlay"></div>
+    <div class="custom-confirm" id="confirmDialog" role="dialog" aria-labelledby="confirmDialogTitle"
+        aria-hidden="true">
+        <div class="confirm-icon">🗑️</div>
+        <p id="confirmDialogTitle">¿Seguro que quieres eliminar este color?</p>
+        <div class="confirm-actions">
+            <button id="confirmYes" class="btn-confirm btn-danger" aria-label="Confirmar eliminación"
+                type="button">Eliminar</button>
+            <button id="confirmNo" class="btn-confirm btn-cancel" aria-label="Cancelar eliminación"
+                type="button">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Toast para notificaciones -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Header -->
+    <header class="app-header" id="appHeader">
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-icon">🎨</span>
+                <h1>Pixel Art <span class="logo-accent">Studio</span></h1>
+            </div>
+        </div>
+        <div class="header-center">
+            <div class="history-controls">
+                <button id="undoBtn" class="header-btn" aria-label="Deshacer" title="Deshacer (Ctrl+Z)" disabled>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 10h13a4 4 0 0 1 0 8H7" />
+                        <path d="m3 10 4-4" />
+                        <path d="m3 10 4 4" />
+                    </svg>
+                </button>
+                <button id="redoBtn" class="header-btn" aria-label="Rehacer" title="Rehacer (Ctrl+Y)" disabled>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10H8a4 4 0 0 0 0 8h9" />
+                        <path d="m21 10-4-4" />
+                        <path d="m21 10-4 4" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="header-right">
+            <button id="shortcutsBtn" class="header-btn desktop-only" aria-label="Atajos de teclado"
+                title="Atajos de teclado">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                    <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10" />
+                </svg>
+            </button>
+            <button id="mobilePanelToggle" class="header-btn mobile-only" aria-label="Abrir panel de herramientas"
+                title="Panel">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Panel de atajos -->
+    <div class="shortcuts-panel" id="shortcutsPanel">
+        <div class="shortcuts-header">
+            <h3>⌨️ Atajos de Teclado</h3>
+            <button id="closeShortcuts" class="btn-close" aria-label="Cerrar">✕</button>
+        </div>
+        <div class="shortcuts-list">
+            <div class="shortcut-item"><kbd>B</kbd><span>Pincel</span></div>
+            <div class="shortcut-item"><kbd>E</kbd><span>Borrador</span></div>
+            <div class="shortcut-item"><kbd>F</kbd><span>Relleno</span></div>
+            <div class="shortcut-item"><kbd>I</kbd><span>Selector</span></div>
+            <div class="shortcut-item"><kbd>G</kbd><span>Toggle Grid</span></div>
+            <div class="shortcut-item"><kbd>M</kbd><span>Modo Espejo</span></div>
+            <div class="shortcut-item"><kbd>Ctrl+Z</kbd><span>Deshacer</span></div>
+            <div class="shortcut-item"><kbd>Ctrl+Y</kbd><span>Rehacer</span></div>
+            <div class="shortcut-item"><kbd>Ctrl+S</kbd><span>Guardar</span></div>
+            <div class="shortcut-item"><kbd>+/-</kbd><span>Zoom</span></div>
+        </div>
+    </div>
+
+    <!-- Layout principal -->
+    <div class="app-layout">
+        <!-- Panel lateral -->
+        <aside class="tool-panel" id="toolPanel">
+            <!-- Color Picker -->
+            <section class="panel-section">
+                <h2 class="section-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                    </svg>
+                    Color
+                </h2>
+                <div class="color-picker-wrapper">
+                    <div class="color-preview" id="colorPreview" role="presentation"></div>
+                    <div class="color-input-row">
+                        <input type="color" id="colorInput" value="#ff0000" aria-label="Selecciona un color">
+                        <input type="text" id="colorHexInput" value="#ff0000" class="hex-input"
+                            aria-label="Código hexadecimal del color" maxlength="7" spellcheck="false">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Herramientas -->
+            <section class="panel-section">
+                <h2 class="section-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                    </svg>
+                    Herramientas
+                </h2>
+                <div class="tools-grid">
+                    <button class="tool-btn active" data-tool="brush" aria-label="Pincel" title="Pincel (B)">
+                        <span class="tool-icon">🖌️</span>
+                        <span class="tool-label">Pincel</span>
+                    </button>
+                    <button class="tool-btn" data-tool="eraser" aria-label="Borrador" title="Borrador (E)">
+                        <span class="tool-icon">🧹</span>
+                        <span class="tool-label">Borrador</span>
+                    </button>
+                    <button class="tool-btn" data-tool="fill" aria-label="Relleno" title="Relleno (F)">
+                        <span class="tool-icon">🪣</span>
+                        <span class="tool-label">Relleno</span>
+                    </button>
+                    <button class="tool-btn" data-tool="picker" aria-label="Selector" title="Selector (I)">
+                        <span class="tool-icon">💉</span>
+                        <span class="tool-label">Selector</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Cuadrícula -->
+            <section class="panel-section">
+                <h2 class="section-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+                    </svg>
+                    Cuadrícula
+                </h2>
+                <div class="grid-config-panel">
+                    <div class="grid-size-row">
+                        <div class="grid-size-input">
+                            <label for="cols">Columnas</label>
+                            <input type="number" id="cols" value="16" min="8" max="64" aria-label="Columnas">
+                        </div>
+                        <span class="grid-separator">×</span>
+                        <div class="grid-size-input">
+                            <label for="rows">Filas</label>
+                            <input type="number" id="rows" value="16" min="8" max="64" aria-label="Filas">
+                        </div>
+                    </div>
+                    <button id="updateGridBtn" class="btn-secondary" aria-label="Actualizar cuadrícula" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 2v6h-6" />
+                            <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                            <path d="M3 22v-6h6" />
+                            <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                        </svg>
+                        Aplicar Tamaño
+                    </button>
+                </div>
+            </section>
+
+            <!-- Paleta -->
+            <section class="panel-section">
+                <h2 class="section-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="13.5" cy="6.5" r=".5" />
+                        <circle cx="17.5" cy="10.5" r=".5" />
+                        <circle cx="8.5" cy="7.5" r=".5" />
+                        <circle cx="6.5" cy="12" r=".5" />
+                        <path
+                            d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+                    </svg>
+                    Paleta
+                </h2>
+                <div class="palette-selector">
+                    <select id="paletteSelector" aria-label="Selecciona una paleta"></select>
+                    <button id="newPaletteBtn" class="btn-icon" aria-label="Crear nueva paleta" title="Nueva paleta"
+                        type="button">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="palette-container">
+                    <div id="colorPalette" class="palette-grid"></div>
+                </div>
+                <button id="addToPaletteBtn" class="btn-secondary" aria-label="Añadir color a la paleta" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Añadir Color
+                </button>
+            </section>
+
+            <!-- Controles -->
+            <section class="panel-section">
+                <h2 class="section-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    Opciones
+                </h2>
+                <div class="controls-grid">
+                    <div class="mirror-controls">
+                        <button id="toggleMirrorBtn" class="ctrl-btn" aria-label="Modo Espejo" title="Modo Espejo (M)"
+                            type="button">
+                            🪞 Espejo
+                        </button>
+                        <select id="mirrorTypeSelector" aria-label="Tipo de espejo">
+                            <option value="vertical">Vertical</option>
+                            <option value="horizontal">Horizontal</option>
+                            <option value="diagonal">Diagonal</option>
+                        </select>
+                    </div>
+                    <button id="toggleGridBtn" class="ctrl-btn" aria-label="Toggle Grid" title="Toggle Grid (G)"
+                        type="button">
+                        🔲 Grid
+                    </button>
+                    <button id="clearGridBtn" class="ctrl-btn btn-warning" aria-label="Limpiar cuadrícula"
+                        type="button">
+                        🧹 Limpiar
+                    </button>
+                    <button id="saveArtBtn" class="ctrl-btn btn-success" aria-label="Guardar arte"
+                        title="Guardar (Ctrl+S)" type="button">
+                        💾 Guardar
+                    </button>
+                    <label class="ctrl-btn file-upload-btn" for="imageLoader" aria-label="Cargar imagen">
+                        📁 Cargar Imagen
+                        <input type="file" id="imageLoader" accept="image/*" aria-label="Cargar imagen">
+                    </label>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Área de dibujo -->
+        <main class="main-area" id="mainArea">
+            <div id="gridContainer" class="grid-container">
+                <div id="grid" role="grid" class="grid-visible"></div>
+            </div>
+
+            <!-- Zoom Controls -->
+            <div class="zoom-controls" id="zoomControls">
+                <button id="zoomOutBtn" class="zoom-btn" aria-label="Disminuir zoom" title="Zoom Out (-)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        <line x1="8" y1="11" x2="14" y2="11" />
+                    </svg>
+                </button>
+                <span id="zoomLevel" class="zoom-level" aria-live="polite">100%</span>
+                <button id="zoomInBtn" class="zoom-btn" aria-label="Aumentar zoom" title="Zoom In (+)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        <line x1="11" y1="8" x2="11" y2="14" />
+                        <line x1="8" y1="11" x2="14" y2="11" />
+                    </svg>
+                </button>
+                <input type="range" id="zoomSlider" min="50" max="300" value="100" class="zoom-slider"
+                    aria-label="Zoom slider">
+            </div>
+
+            <!-- Cursor coordinates -->
+            <div class="cursor-info" id="cursorInfo">
+                <span id="cursorCoords">0, 0</span>
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile Bottom Toolbar -->
+    <div class="mobile-toolbar" id="mobileToolbar">
+        <button class="mobile-tool-btn active" data-tool="brush" aria-label="Pincel">
+            <span>🖌️</span>
+        </button>
+        <button class="mobile-tool-btn" data-tool="eraser" aria-label="Borrador">
+            <span>🧹</span>
+        </button>
+        <button class="mobile-tool-btn" data-tool="fill" aria-label="Relleno">
+            <span>🪣</span>
+        </button>
+        <button class="mobile-tool-btn" data-tool="picker" aria-label="Selector">
+            <span>💉</span>
+        </button>
+        <div class="mobile-divider"></div>
+        <button class="mobile-tool-btn" id="mobileUndoBtn" aria-label="Deshacer">
+            <span>↩️</span>
+        </button>
+        <button class="mobile-tool-btn" id="mobileRedoBtn" aria-label="Rehacer">
+            <span>↪️</span>
+        </button>
+        <div class="mobile-divider"></div>
+        <button class="mobile-tool-btn" id="mobileSaveBtn" aria-label="Guardar">
+            <span>💾</span>
+        </button>
+        <div class="mobile-color-preview" id="mobileColorPreview" aria-label="Color actual"></div>
+    </div>
+
+    <!-- Mobile panel overlay -->
+    <div class="mobile-panel-overlay" id="mobilePanelOverlay"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
